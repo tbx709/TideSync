@@ -1,0 +1,59 @@
+=== gofmt ===
+clean
+
+=== go vet (all targets) ===
+  linux/amd64     ok
+  linux/arm64     ok
+  linux/arm       ok
+  windows/amd64   ok
+  windows/arm64   ok
+  windows/386     ok
+
+=== unit and integration tests ===
+ok  	tidesync	(cached)
+ok  	tidesync/internal/client	0.036s
+ok  	tidesync/internal/config	(cached)
+ok  	tidesync/internal/fsx	0.002s
+ok  	tidesync/internal/logx	(cached)
+ok  	tidesync/internal/proto	(cached)
+ok  	tidesync/internal/server	0.011s
+ok  	tidesync/internal/service	(cached)
+
+=== cross compilation ===
+TideSync 1.0.0 (none) built 2026-09-15T03:46:27Z
+toolchain: go version go1.26.8 linux/amd64
+
+  linux/amd64                 ok    7656 KiB  tidesync-1.0.0-linux-amd64
+  linux/arm64                 ok    7168 KiB  tidesync-1.0.0-linux-arm64
+  linux/armv7                 ok    7424 KiB  tidesync-1.0.0-linux-armv7
+  linux/armv6                 ok    7424 KiB  tidesync-1.0.0-linux-armv6
+  linux/386                   ok    7376 KiB  tidesync-1.0.0-linux-386
+  windows/amd64               ok    7899 KiB  tidesync-1.0.0-windows-amd64.exe
+  windows/arm64               ok    7165 KiB  tidesync-1.0.0-windows-arm64.exe
+  windows/386                 ok    7604 KiB  tidesync-1.0.0-windows-386.exe
+
+wrote 8 binaries to /home/brain/workspace/TideSync/dist
+7e9bb6c388d36c2235e0af2f386e30331663e035ccbcac5577f7562ef4a41b3e  tidesync-1.0.0-linux-386
+c69e3033385b79feb7100babeac011150989ee02bf4fa103d08fe83a69aa056b  tidesync-1.0.0-linux-amd64
+f0dcfb3c27980bdf8dea9c9cbd874435b5495f12fd8600afed43abf215ac2f73  tidesync-1.0.0-linux-arm64
+82cd072ec129d432f6279cf0df843a22e2d51210a24eea47f99be6c52fecffb2  tidesync-1.0.0-linux-armv6
+4c07970b0b71c4faff877124713da26fdb6a800203025b7817dde1da3f8b5234  tidesync-1.0.0-linux-armv7
+78691f89dbfea78ba610f59765c8405b3e9031eb787a5dc1987521043c7275df  tidesync-1.0.0-windows-386.exe
+92f5c9337c4a5183c31ad13a882ed6eb6ab18af4aa5e49d14da2b0ed1c22d2ee  tidesync-1.0.0-windows-amd64.exe
+49bdadb65aa7eb1a7a5f4717c0d5bccaefec669f49efe2ee3c21c0fef7698cb2  tidesync-1.0.0-windows-arm64.exe
+
+=== binary inspection ===
+  ok      tidesync-1.0.0-linux-amd64: ELF 64-bit LSB executable, x86-64, version 1 (SYSV), statically linked, Go BuildID=-KwpkDZb79nkCbRE69IT/OqKLfQPNx6p4uR25I25K/6Gxxg4GQP-oBivRgx932/OrG3TB-DDZ7DFjUWagyp, BuildID[sha1]=fcd4fe86bce6ab48fae98c2a1b5b12c200eabe8d, stripped
+  ok      tidesync-1.0.0-linux-arm64: ELF 64-bit LSB executable, ARM aarch64, version 1 (SYSV), statically linked, Go BuildID=jsABuED0HEWxMaaLKSJg/5v85x-r02B_z6CFtpFj9/IaKSYL9bW1hxKYNcHX65/RQj2TZJwxPWL_h2EEkev, BuildID[sha1]=ab562ea977c30a82c643ea7dfe81505a78497230, stripped
+  ok      tidesync-1.0.0-linux-armv7: ELF 32-bit LSB executable, ARM, EABI5 version 1 (SYSV), statically linked, Go BuildID=EPkeVeIF8iYbyCQGSKpT/ftQQKh6PbC3wAxsKLSqF/MH0r-9AoqSJK49LlsxOc/7hJL9F75zmAtgingGs-z, BuildID[sha1]=112904e0bb5f1ff9751304b17c3511e0dab0211e, stripped
+  ok      tidesync-1.0.0-linux-armv6: ELF 32-bit LSB executable, ARM, EABI5 version 1 (SYSV), statically linked, Go BuildID=taD3Hw-6C3ZsjumtmUCL/c6ZaNtg9GJpE8HCH6lpM/X9zHoEdz69CiZ0-yU5QL/2fXW85ryIzDxJdo8H7RZ, BuildID[sha1]=6d5b2fd524e692c3841e39d03c85107ff4dd75c2, stripped
+  ok      tidesync-1.0.0-windows-amd64.exe: PE32+ executable (console) x86-64, for MS Windows
+  ok      tidesync-1.0.0-windows-arm64.exe: PE32+ executable (console) Aarch64, for MS Windows
+
+=== static linking (no runtime dependencies) ===
+  ok      tidesync-1.0.0-linux-amd64 is statically linked
+  ok      tidesync-1.0.0-linux-arm64 is statically linked
+  ok      tidesync-1.0.0-linux-armv7 is statically linked
+
+release checks passed
+RELEASE_EXIT=0

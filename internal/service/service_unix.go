@@ -1,0 +1,189 @@
+//go:build !windows
+
+package service
+
+import (
+	"context"
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+)
+
+// systemd paths.
+const (
+	systemUnitDir = "/etc/systemd/system"
+	userUnitDir   = ".config/systemd/user"
+)
+
+// Install writes a systemd unit and enables it.
+func Install(o Options) (string, error) {
+	if err := o.Validate(); err != nil {
+		return "", err
+	}
+	if _, ok := lookPath("systemctl"); !ok {
+		return "", fmt.Errorf("systemd is not available on this machine;\n"+
+			"install the unit from deploy/systemd/ by hand, or schedule it with cron:\n  %s",
+			CronHint(o))
+	}
+	userMode := o.Mode == "systemd-user" || (o.Mode != "systemd" && os.Geteuid() != 0)
+	unitPath, err := writeUnit(o, userMode)
+	if err != nil {
+		return "", err
+	}
+	name := o.NameOrDefault() + ".service"
+	if _, err := runCommand("systemctl", userArgs(userMode, "daemon-reload")...); err != nil {
+		return unitPath, fmt.Errorf(
+			"the unit file was written to %s but systemctl could not reload it: %w\n"+
+				"once systemd is available run: %s", unitPath, err, systemctlHint(userMode, name))
+	}
+	if _, err := runCommand("systemctl", userArgs(userMode, "enable", "--now", name)...); err != nil {
+		return unitPath, fmt.Errorf(
+			"the unit file was written to %s but it could not be started: %w\n"+
+				"start it by hand with: %s", unitPath, err, systemctlHint(userMode, name))
+	}
+	return fmt.Sprintf("installed %s and started it (%s)", unitPath, statusHint(userMode)), nil
+}
+
+// Uninstall stops and removes the unit.
+func Uninstall(o Options) (string, error) {
+	name := o.NameOrDefault()
+	userMode := o.Mode == "systemd-user" || (o.Mode != "systemd" && os.Geteuid() != 0)
+	unitPath := unitFilePath(name, userMode)
+	_, _ = runCommand("systemctl", userArgs(userMode, "disable", "--now", name+".service")...)
+	if err := os.Remove(unitPath); err != nil && !os.IsNotExist(err) {
+		return "", err
+	}
+	_, _ = runCommand("systemctl", userArgs(userMode, "daemon-reload")...)
+	return fmt.Sprintf("removed %s", unitPath), nil
+}
+
+// Status reports whether the unit exists and runs.
+func Status(o Options) (StatusInfo, error) {
+	name := o.NameOrDefault()
+	userMode := o.Mode == "systemd-user" || (o.Mode != "systemd" && os.Geteuid() != 0)
+	unitPath := unitFilePath(name, userMode)
+	info := StatusInfo{Manager: managerName(userMode), Unit: unitPath}
+	if _, err := os.Stat(unitPath); err != nil {
+		info.Detail = "unit file not found"
+		return info, nil
+	}
+	info.Installed = true
+	active, err := runCommand("systemctl", userArgs(userMode, "is-active", name+".service")...)
+	if err == nil && strings.TrimSpace(active) == "active" {
+		info.Running = true
+	}
+	show, _ := runCommand("systemctl", userArgs(userMode, "status", name+".service", "--no-pager", "--lines=5")...)
+	info.Detail = show
+	return info, nil
+}
+
+// Start enables and starts the unit.
+func Start(o Options) (string, error) {
+	name := o.NameOrDefault()
+	userMode := o.Mode == "systemd-user" || (o.Mode != "systemd" && os.Geteuid() != 0)
+	return runCommand("systemctl", userArgs(userMode, "start", name+".service")...)
+}
+
+// Stop stops the unit.
+func Stop(o Options) (string, error) {
+	name := o.NameOrDefault()
+	userMode := o.Mode == "systemd-user" || (o.Mode != "systemd" && os.Geteuid() != 0)
+	return runCommand("systemctl", userArgs(userMode, "stop", name+".service")...)
+}
+
+// RunInForeground is used by `tidesync service run` outside Windows: the
+// supervisor (systemd, docker, a terminal) owns the process, so the caller just
+// runs the job directly.
+func RunInForeground(o Options, run func(context.Context) error) (bool, error) { return false, nil }
+
+func userArgs(userMode bool, args ...string) []string {
+	if userMode {
+		return append([]string{"--user"}, args...)
+	}
+	return args
+}
+
+func managerName(userMode bool) string {
+	if userMode {
+		return "systemd (user)"
+	}
+	return "systemd (system)"
+}
+
+func statusHint(userMode bool) string {
+	if userMode {
+		return "systemctl --user status tidesync"
+	}
+	return "systemctl status tidesync"
+}
+
+// systemctlHint renders the command a human should run when the automatic
+// enable/start step could not run (no systemd, no bus, no permission).
+func systemctlHint(userMode bool, unit string) string {
+	prefix := "sudo "
+	if userMode {
+		return "systemctl --user daemon-reload && systemctl --user enable --now " + unit
+	}
+	return prefix + "systemctl daemon-reload && " + prefix + "systemctl enable --now " + unit
+}
+
+func unitFilePath(name string, userMode bool) string {
+	if userMode {
+		home, err := os.UserHomeDir()
+		if err != nil {
+			home = "."
+		}
+		return filepath.Join(home, userUnitDir, name+".service")
+	}
+	return filepath.Join(systemUnitDir, name+".service")
+}
+
+// writeUnit renders and stores the systemd unit.
+func writeUnit(o Options, userMode bool) (string, error) {
+	path := unitFilePath(o.NameOrDefault(), userMode)
+	argv := append([]string{o.Binary}, o.ExecArgs()...)
+	var b strings.Builder
+	fmt.Fprintf(&b, "# Generated by tidesync service install\n")
+	fmt.Fprintf(&b, "[Unit]\n")
+	fmt.Fprintf(&b, "Description=%s (%s)\n", o.DisplayName(), HostDescription())
+	fmt.Fprintf(&b, "After=network-online.target\n")
+	fmt.Fprintf(&b, "Wants=network-online.target\n\n")
+	fmt.Fprintf(&b, "[Service]\n")
+	fmt.Fprintf(&b, "Type=simple\n")
+	fmt.Fprintf(&b, "ExecStart=%s\n", QuoteCommandLine(argv))
+	fmt.Fprintf(&b, "Restart=always\n")
+	fmt.Fprintf(&b, "RestartSec=15\n")
+	fmt.Fprintf(&b, "TimeoutStopSec=60\n")
+	for _, env := range o.ExtraEnv {
+		fmt.Fprintf(&b, "Environment=%q\n", env)
+	}
+	// Modest hardening that cannot break writes to the destination directory.
+	fmt.Fprintf(&b, "NoNewPrivileges=true\n")
+	if !userMode && o.User != "" && o.User != "root" {
+		fmt.Fprintf(&b, "User=%s\n", o.User)
+		fmt.Fprintf(&b, "Group=%s\n", o.User)
+	}
+	fmt.Fprintf(&b, "\n[Install]\n")
+	if userMode {
+		fmt.Fprintf(&b, "WantedBy=default.target\n")
+	} else {
+		fmt.Fprintf(&b, "WantedBy=multi-user.target\n")
+	}
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		return path, err
+	}
+	if err := os.WriteFile(path, []byte(b.String()), 0o644); err != nil {
+		return path, err
+	}
+	return path, nil
+}
+
+// CronHint documents the cron fallback for systems without systemd.
+func CronHint(o Options) string {
+	minutes := int(o.IntervalOrDefault().Minutes())
+	if minutes < 1 {
+		minutes = 1
+	}
+	return fmt.Sprintf("*/%d * * * * %s", minutes, QuoteCommandLine(append([]string{o.Binary}, o.OneShotArgs()...)))
+}

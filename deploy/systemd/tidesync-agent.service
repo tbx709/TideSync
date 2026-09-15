@@ -1,0 +1,32 @@
+# TideSync agent, installed as a systemd service.
+#
+#   sudo cp deploy/systemd/tidesync-agent.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now tidesync-agent
+#
+# The agent publishes one directory read-only over HTTP(S). Restrict who can
+# reach it with server.allow_cidrs and always set a token.
+
+[Unit]
+Description=TideSync agent (publishes a directory to the LAN)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/tidesync serve -config /etc/tidesync/server.json
+Restart=always
+RestartSec=15
+TimeoutStopSec=30
+
+# The agent only needs to read server.root and write its hash cache.
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+# Adjust to the published directory and the state directory:
+ReadOnlyPaths=/srv/shared
+ReadWritePaths=/var/lib/tidesync
+
+[Install]
+WantedBy=multi-user.target

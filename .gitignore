@@ -1,0 +1,15 @@
+# build output
+/dist/
+# local toolchain used for offline builds
+/.toolchain/
+# scratch space for tests and manual runs
+/.work/
+*.test
+*.out
+
+# editors and OS noise
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+*~

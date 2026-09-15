@@ -1,0 +1,9 @@
+ok  	tidesync	1.010s
+ok  	tidesync/internal/client	1.099s
+ok  	tidesync/internal/config	1.011s
+ok  	tidesync/internal/fsx	1.010s
+ok  	tidesync/internal/logx	1.016s
+ok  	tidesync/internal/proto	1.010s
+ok  	tidesync/internal/server	1.030s
+ok  	tidesync/internal/service	1.010s
+RACE_EXIT=0

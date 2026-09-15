@@ -1,0 +1,40 @@
+# TideSync client, installed as a systemd service.
+#
+# `tidesync service install -config /etc/tidesync/client.json` writes an
+# equivalent unit and enables it. This file is the reference for manual
+# installation (for example when systemd is not used for unit management).
+#
+#   sudo cp deploy/systemd/tidesync.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now tidesync
+#
+# Check progress with:  journalctl -u tidesync -f
+
+[Unit]
+Description=TideSync synchroniser (pulls files from a LAN agent)
+Documentation=https://github.com/your-org/tidesync
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# The interval itself is configured in the JSON file (sync.interval or
+# sync.schedule); systemd only supervises the process.
+ExecStart=/usr/local/bin/tidesync sync -config /etc/tidesync/client.json
+Restart=always
+RestartSec=15
+TimeoutStopSec=60
+NoNewPrivileges=true
+
+# Running as root is only needed when the destination is a system directory.
+# For a user directory add (and create) a dedicated account instead:
+#   User=tidesync
+#   Group=tidesync
+#   ReadWritePaths=/srv/tidesync/data
+
+# Optional hardening that does not interfere with syncing:
+ProtectHome=false
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

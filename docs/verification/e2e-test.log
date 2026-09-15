@@ -1,0 +1,92 @@
+
+== fixtures ==
+  source tree:
+    src/中文文件名.txt
+    src/a.txt
+    src/empty.bin
+    src/emptydir
+    src/file with spaces.txt
+    src/link.txt
+    src/random.bin
+    src/scratch.tmp
+    src/sub
+    src/sub/b.txt
+    src/sub/deep
+    src/sub/deep/c.txt
+
+== agent startup ==
+  PASS agent answers /healthz
+
+== security ==
+  PASS manifest without a token is refused (HTTP 401)
+  PASS manifest with a wrong token is refused (HTTP 401)
+  PASS path traversal is refused (HTTP 400)
+  PASS url encoded traversal is refused (HTTP 400)
+
+== first synchronisation ==
+  PASS run completed
+  PASS destination matches source
+  PASS excluded file was not transferred
+  PASS file content is correct
+  PASS unicode file name transferred
+  PASS binary file is byte identical
+  PASS modification time preserved
+  PASS empty directory recreated
+
+== idempotence ==
+  PASS second run downloads nothing
+  PASS second run recognises up-to-date files
+
+== incremental changes ==
+  PASS changed and new files downloaded (downloaded=2)
+  PASS changed file content applied
+  PASS new file transferred
+  PASS deleted-on-server file kept while mirror mode is off
+
+== repair and integrity ==
+  PASS corrupted destination file repaired
+  PASS truncated destination file repaired
+  PASS repair converged (nothing left to do)
+
+== mirror mode ==
+  PASS local-only and stale files deleted (deleted=2)
+  PASS user file removed in mirror mode
+  PASS server-side deletion mirrored
+  PASS trees identical after mirror run
+  PASS sync journal survives mirror mode
+
+== dry run ==
+  PASS dry run writes nothing
+  PASS dry run reports planned work
+
+== bulk archive transfer (cold destination) ==
+  PASS tar.gz fast path used
+  PASS bulk transfer produced an identical tree
+
+== resilience ==
+  PASS a stopped agent fails the run with a non-zero exit code
+  PASS the failure names the unreachable agent
+
+== stale lock recovery ==
+  PASS an abandoned lock is reclaimed automatically
+
+== scheduled daemon mode ==
+  PASS daemon performed its first run on start
+  PASS daemon scheduled the next run
+  PASS daemon picked up a later change automatically
+  PASS daemon stopped on SIGTERM
+
+== cli surface ==
+  PASS version command
+  PASS check validates a generated client config
+  PASS serve --print-config emits JSON
+  PASS sync --print-config emits JSON
+  PASS missing required flags exit non-zero
+  PASS the error explains what is missing
+
+== summary ==
+  44 checks passed, 0 failed
+  PASS agent wrote a log file
+
+ALL E2E CHECKS PASSED
+E2E_EXIT=0

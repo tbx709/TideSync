@@ -1,0 +1,108 @@
+{
+  // ==========================================================================
+  // TideSync client configuration (runs on every machine that RECEIVES files).
+  //
+  //   tidesync sync -config /etc/tidesync/client.json            # daemon
+  //   tidesync sync -config /etc/tidesync/client.json -once      # single run
+  //
+  // Comments, trailing commas and ${ENV_VAR} substitution are supported.
+  // ==========================================================================
+
+  "name": "daily-data",
+
+  "server": {
+    // The agent, reachable over the local network.
+    "url": "http://192.168.1.10:8787",
+    "token": "${TIDESYNC_TOKEN}",
+    // Sub directory below the agent root. "" mirrors everything the agent
+    // publishes.
+    "remote_path": "share/data",
+    "timeout": "30s"
+    // "ca_cert": "/etc/tidesync/agent.crt",       // when the agent uses HTTPS
+    // "insecure_skip_verify": false
+  },
+
+  "local": {
+    // Destination directory. It is created if missing. TideSync never deletes
+    // anything outside it.
+    "dir": "/srv/tidesync/data",
+
+    // Mirror deletions from the agent. Off by default because it deletes
+    // local data; turn it on when the destination must be an exact copy.
+    "delete_extra": false,
+
+    // Copy the source modification time (needed for cheap incremental runs).
+    "preserve_mtime": true,
+
+    // Copy unix permission bits (ignored on Windows).
+    "preserve_perms": false,
+
+    // Recreate directories that exist on the agent, including empty ones.
+    "create_dirs": true,
+
+    // Recreate symbolic links published by the agent. On Windows this needs
+    // Developer Mode or administrator rights.
+    "create_symlinks": false
+  },
+
+  "sync": {
+    // Daemon mode: wait this long between runs.
+    "interval": "5m",
+    // Spread many clients over time so they do not all hit the agent at once.
+    "jitter": "30s",
+
+    // Instead of "interval", run at fixed wall clock times every day:
+    // "schedule": ["02:30", "14:30"],
+
+    // Parallel downloads. 2-4 is plenty for a Raspberry Pi, 8 for a PC.
+    "concurrency": 4,
+
+    // Retries per file and per manifest request, with exponential backoff.
+    "retries": 5,
+    "retry_backoff": "2s",
+
+    // Run immediately when the daemon starts.
+    "run_on_start": true,
+
+    // Force a full digest comparison every so often (0 = never).
+    "full_scan_every": "24h",
+
+    // A cold destination larger than this uses the tar.gz fast path.
+    "bulk_threshold_mb": 512,
+    "bulk_threshold_files": 2000,
+
+    // Skip files larger than this (0 = no limit).
+    "max_file_size_mb": 0,
+
+    // Throttle downloads (0 = unlimited).
+    "bandwidth_limit_kbps": 0,
+
+    // Abort the whole run at the first failed file (default: keep going).
+    "stop_on_error": false
+  },
+
+  // How a file is considered up to date:
+  //   sha256      - compare digests (default, detects same-size edits)
+  //   size-mtime  - compare size and timestamp only (cheapest)
+  //   none        - compare size only
+  "verify": "sha256",
+
+  // Client side exclusions, same syntax as the agent's.
+  "exclude": ["*.tmp", "*.part", ".git/", "**/~$*", "**/.DS_Store"],
+
+  // Sync journal. Defaults to
+  //   /var/lib/tidesync/state-<job>.json   (as root on Linux)
+  //   ~/.local/state/tidesync/...          (as a normal user)
+  //   %ProgramData%\TideSync\...           (Windows)
+  // and falls back to <local.dir>/.tidesync when that is not writable.
+  // "state_file": "/var/lib/tidesync/state-daily-data.json",
+  // "lock_file":  "/var/lib/tidesync/lock-daily-data.lock",
+
+  "logging": {
+    "level": "info",
+    "file": "/var/log/tidesync/client.log",
+    "max_size_mb": 10,
+    "max_files": 3,
+    "json": false
+  }
+}

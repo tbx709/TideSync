@@ -1,0 +1,32 @@
+ARM emulation test
+
+== linux/arm64 (/home/brain/workspace/TideSync/.work/qemu/root/usr/bin/qemu-aarch64-static) ==
+  tidesync 1.0.0 (commit none, built 2026-09-15T03:46:27Z)
+  platform linux/arm64, go1.26.8
+  PASS linux/arm64: version runs under emulation
+  PASS linux/arm64: agent answers over the network
+  PASS linux/arm64: client completed a synchronisation
+  PASS linux/arm64: destination identical to source
+  PASS linux/arm64: 1 MiB binary transferred byte for byte
+  PASS linux/arm64: unicode file name survived emulation
+  PASS linux/arm64: exclude rule honoured
+  PASS linux/arm64: second run is a no-op
+  PASS linux/arm64: change propagated on the next run
+
+== linux/armv7 (/home/brain/workspace/TideSync/.work/qemu/root/usr/bin/qemu-arm-static) ==
+  tidesync 1.0.0 (commit none, built 2026-09-15T03:46:27Z)
+  platform linux/arm, go1.26.8
+  PASS linux/armv7: version runs under emulation
+  PASS linux/armv7: agent answers over the network
+  PASS linux/armv7: client completed a synchronisation
+  PASS linux/armv7: destination identical to source
+  PASS linux/armv7: 1 MiB binary transferred byte for byte
+  PASS linux/armv7: unicode file name survived emulation
+  PASS linux/armv7: exclude rule honoured
+  PASS linux/armv7: second run is a no-op
+  PASS linux/armv7: change propagated on the next run
+
+  18 checks passed, 0 failed
+
+ARM EMULATION CHECKS PASSED
+ARM_EXIT=0

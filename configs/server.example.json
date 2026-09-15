@@ -1,0 +1,77 @@
+{
+  // ==========================================================================
+  // TideSync agent configuration (runs on the machine that HAS the files).
+  //
+  //   tidesync serve -config /etc/tidesync/server.json
+  //
+  // Comments, trailing commas and ${ENV_VAR} substitution are supported.
+  // ==========================================================================
+
+  // Interface and port clients connect to. Use 0.0.0.0:8787 to accept
+  // connections from the whole local network.
+  "listen": "0.0.0.0:8787",
+
+  // The directory that is published. Everything below it is visible to
+  // authenticated clients, so point it at a dedicated folder.
+  "root": "/srv/shared",
+
+  // Shared secret. Generate one with:  tidesync serve -gen-token
+  // Prefer an environment variable over a literal: "${TIDESYNC_TOKEN}"
+  "token": "${TIDESYNC_TOKEN}",
+
+  // Only accept clients from these networks/addresses (empty = any address).
+  "allow_cidrs": ["192.168.0.0/16", "10.0.0.0/8", "172.16.0.0/12", "127.0.0.1"],
+
+  // HTTPS. Both files must be set together; clients then need
+  // "ca_cert" in their own configuration.
+  // "tls_cert": "/etc/tidesync/agent.crt",
+  // "tls_key":  "/etc/tidesync/agent.key",
+
+  // How digests are computed:
+  //   auto   - hash files up to hash_max_size_mb, use size+mtime above that
+  //   always - hash every file (most accurate, reads everything once)
+  //   never  - no digests at all; clients then compare size and mtime only
+  "hash_mode": "auto",
+  "hash_max_size_mb": 64,
+
+  // Digest cache. "true" avoids re-reading unchanged files on every scan.
+  // Files modified in the last hash_grace are always re-read, so a change
+  // within one filesystem timestamp tick is still detected. Set to false for
+  // absolute certainty at the cost of reading the whole tree on every scan.
+  "hash_cache": true,
+  "hash_grace": "2s",
+
+  // Reuse a scan for this long. 0 (default) means every client request sees
+  // the current state of the disk; raise it only for huge trees with many
+  // clients syncing at the same moment.
+  "manifest_ttl": "0s",
+
+  // Publish what symlinks point at. Off by default: a symlink pointing
+  // outside root is never published.
+  "follow_symlinks": false,
+
+  // .gitignore style exclusions, relative to root.
+  "exclude": ["*.tmp", "*.part", ".git/", "**/~$*", "**/.DS_Store", "**/Thumbs.db"],
+
+  // Where the digest cache lives (default: /var/lib/tidesync as root,
+  // ~/.local/state/tidesync otherwise).
+  "state_dir": "/var/lib/tidesync",
+
+  // Simultaneous transfers and an optional per-transfer rate limit.
+  "max_concurrent": 4,
+  "rate_limit_kbps": 0,
+
+  // Bulk tar.gz endpoint used by clients for their first sync.
+  "archive_enabled": true,
+
+  // Safety net against pathological trees.
+  "manifest_max_entries": 200000,
+
+  "logging": {
+    "level": "info",
+    "file": "/var/log/tidesync/agent.log",
+    "max_size_mb": 10,
+    "max_files": 3,
+    "json": false
+  }
+}
