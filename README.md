@@ -62,8 +62,19 @@
 | Windows ARM64 | `tidesync-<版本>-windows-arm64.exe` | Surface Pro X、Windows on ARM |
 | Windows 32 位 | `tidesync-<版本>-windows-386.exe` | 老旧 32 位 Windows |
 
+预编译二进制可以直接从 [Releases](https://github.com/tbx709/TideSync/releases) 下载，每个平台一个文件，
+不依赖 libc、也不需要安装 Go 或 Python：
+
+```bash
+# 树莓派 4（64 位系统）为例
+curl -LO https://github.com/tbx709/TideSync/releases/download/v1.0.0/tidesync-1.0.0-linux-arm64
+curl -LO https://github.com/tbx709/TideSync/releases/download/v1.0.0/SHA256SUMS
+sha256sum -c SHA256SUMS --ignore-missing      # Windows 用 certutil -hashfile <文件> SHA256
+chmod +x tidesync-1.0.0-linux-arm64 && ./tidesync-1.0.0-linux-arm64 version
+```
+
 > 树莓派上直接用对应架构的二进制即可，无需安装 Go 或 Python：
-> `tar -xzf` 或直接拷贝，`chmod +x tidesync`，然后 `./tidesync version` 验证。
+> 直接拷贝或解压，`chmod +x tidesync`，然后 `./tidesync version` 验证。
 
 ## 快速开始
 
@@ -409,6 +420,14 @@ QEMU_DIR=./qemu/usr/bin ./scripts/arm-emulation-test.sh
 ```
 
 交叉编译不需要额外工具链：`CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM=7 go build`。
+
+发布新版本（打 tag、建 Release、上传各平台二进制）：
+
+```bash
+VERSION=1.1.0 ./scripts/build-all.sh
+git tag -a v1.1.0 -m "TideSync 1.1.0" && git push origin v1.1.0
+GITHUB_TOKEN=<有 repo 权限的令牌> ./scripts/publish-release.sh 1.1.0 <你的用户名>/TideSync
+```
 
 ## 项目结构
 
